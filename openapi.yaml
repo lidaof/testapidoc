@@ -1,155 +1,244 @@
 openapi: 3.0.3
 info:
-    title: IGVF Catalog - OpenAPI 3.0
-    description: |-
-        This is a proposed/ongoing design of API endpoints of [IGVF](https://igvf.org/) catalog based on the OpenAPI 3.0 specification.
-    termsOfService: https://igvf.org/about/ # to be updated
-    contact:
-        email: dli23@wustl.edu
-    license:
-        name: Apache 2.0
-        url: http://www.apache.org/licenses/LICENSE-2.0.html
-    version: 0.0.1
+  title: IGVF Catalog - OpenAPI 3.0
+  description: |-
+    This is a proposed/ongoing design of API endpoints of [IGVF](https://igvf.org/) catalog based on the OpenAPI 3.0 specification.
+  termsOfService: https://igvf.org/about/ # to be updated
+  contact:
+    email: dli23@wustl.edu
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
 externalDocs:
-    description: IGVF website
-    url: https://igvf.org/
+  description: IGVF website
+  url: https://igvf.org/
 servers:
-    - url: https://stanford-dacc.hg38.assembly/api/v3 # to be updated
+  - url: https://stanford-dacc.hg38.assembly/api/v3 #to be updated
 tags:
-    - name: variant
-      description: every data attributes for one variant
-      externalDocs:
-          description: Find out more
-          url: https://igvf.org/
-paths:
-    /variant/findByRegion:
-        get:
-            tags:
-                - variant
-            summary: Finds Variants by a genomic region
-            description: Provide chromosome, start and end position.
-            operationId: findVariantsByRegion
-            parameters:
-                - name: chrom
-                  in: path
-                  description: chromosome
-                  required: true
-                  explode: true
-                  schema:
-                      type: string
-                      example: chr19
-                - name: start
-                  in: path
-                  description: start position
-                  required: true
-                  explode: true
-                  schema:
-                      type: number
-                      example: 44908820
-                - name: end
-                  in: path
-                  description: end position
-                  required: true
-                  explode: true
-                  schema:
-                      type: number
-                      example: 44908922
-            responses:
-                "200":
-                    description: successful operation
-                    content:
-                        application/json:
-                            schema:
-                                type: array
-                                items:
-                                    $ref: "#/components/schemas/Variant"
-                "400":
-                    description: Invalid region values
-    /variant/{variantId}:
-        get:
-            tags:
-                - variant
-            summary: Find variant by ID
-            description: Returns a single variant
-            operationId: getVariantById
-            parameters:
-                - name: variantId
-                  in: path
-                  description: ID of variant to return
-                  required: true
-                  schema:
-                      type: string
-                      example: rs7412
-            responses:
-                "200":
-                    description: successful operation
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/Variant"
-                        application/xml:
-                            schema:
-                                $ref: "#/components/schemas/Variant"
-                "400":
-                    description: Invalid Variant ID supplied
-                "404":
-                    description: Variant not found
+  - name: variant
+    description: variant info
 
+paths:
+
+  /variant/findByVariantType:
+    get:
+      tags:
+        - variant
+      summary: Finds variants by variant category
+      description: Multiple status values can be provided with comma separated strings
+      operationId: findPetsByStatus
+      parameters:
+        - name: variant_type
+          in: query
+          description: The variant types you want to filter by
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/VariantType'
+        - name: position
+          in: query
+          description: The chromosome you want to search on
+          required: false
+          explode: true
+          schema:
+            type: string
+            enum:
+              - chr1
+              - chr2
+              - etc
+            example: chr10
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Variant'          
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Variant'
+        '400':
+          description: Invalid status value
+      security:
+        - petstore_auth:
+            - read:variants
+  /variant/findByRegion:
+    get:
+      tags:
+        - variant
+      summary: Finds Variants by a genomic region
+      description: Provide chromosome, start and end position.
+      operationId: findVariantsByRegion
+      parameters:
+        - name: chr
+          in: query
+          description: chromosome
+          required: true
+          explode: true
+          schema:
+            type: string
+        - name: start
+          in: query
+          description: start position
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: end
+          in: query
+          description: end position
+          required: false
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Variant'          
+        '400':
+          description: Invalid input region
+      security:
+        - petstore_auth:
+            - read:variants
+  /variant/{variantId}:
+    get:
+      tags:
+        - variant
+      summary: Find variant by ID
+      description: Return tracks corresponding to a variant id
+      operationId: getPetById
+      parameters:
+        - name: variantId
+          in: path
+          description: ID of variant to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variant'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Variant'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Variant not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - read:variants
 components:
-    schemas:
-        Category:
-            type: object
-            properties:
-                name:
-                    type: string
-                    description: Variant category
-                    example: snv
-                    enum:
-                        - snv
-                        - indel
-        Function:
-            type: object
-            properties:
-                id:
-                    type: integer
-                    format: int64
-                    example: 10
-                function:
-                    type: string
-                    example: test function
-        Variant:
-            required:
-                - id
-                - chrom
-                - start
-                - end
-            type: object
-            properties:
-                id:
-                    type: string
-                    example: rs7412
-                chrom:
-                    type: string
-                    example: chr19
-                start:
-                    type: number
-                    example: 44908820
-                end:
-                    type: number
-                    example: 44908922
-                category:
-                    $ref: "#/components/schemas/Category"
-                function:
-                    $ref: "#/components/schemas/Function"
-        ApiResponse:
-            type: object
-            properties:
-                code:
-                    type: integer
-                    format: int32
-                type:
-                    type: string
-                message:
-                    type: string
-            xml:
-                name: "##default"
+  schemas:
+
+    AlleleType:
+      type: string
+      example: G>A
+      enum:
+        - G>A
+        - G>T
+        - ETC
+      xml:
+        name: tag
+    
+    VariantType:
+      type: string
+      enum:
+        - SNP
+        - SNV
+        - INS
+        - DEL
+        - ETC
+        
+    Variant:
+      required:
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          example: rs******
+        position:
+          type: object
+          properties:
+            chromosome:
+              type: string
+              example: chr10
+            start_pos:
+              type: integer
+              example: 1000000
+            end_pos:
+              type: integer
+              example: 1000001
+        variant_type:
+          type: string
+          example: SNP
+        alleles:
+          description: array of possible alleles for this variant location if applicable
+          type: array
+          xml:
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/AlleleType'
+        count:
+          type: integer
+          format: int64
+          description: total number of records associated with the variant
+          example: 100
+        data_source:
+          type: string
+          example: MPRA_hg19
+      xml:
+        name: variant
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+      xml:
+        name: '##default'
+  requestBodies:
+    Pet:
+      description: Pet object that needs to be added to the store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Variant'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/Variant'
+
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            read:variants: read variants
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
