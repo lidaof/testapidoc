@@ -21,6 +21,41 @@ tags:
 
 paths:
 
+  /tool/variantIdConverter:
+    get:
+      tags: 
+      - variant
+      summary: Find the various variant Ids/names used by different datasources.
+      description: For a input variant id, it will return an array of all different formats associated with this variant from different data sources.
+      parameters:
+        - name: varaint_id
+          in: query
+          required: true
+          explode: true
+          schema:
+            type: string
+            example: rs*****
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VariantId'
+                example: [{format: rs527413419, source: dbSNP},{format: 1-55516888-G-GA, source: gnomAD}]
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VariantId'
+        '400':
+          description: Invalid variant id
+      security:
+        - igvf_auth:
+            - read:variants
+
   /variant/findByVariantType:
     get:
       tags:
@@ -67,7 +102,7 @@ paths:
         '400':
           description: Invalid status value
       security:
-        - petstore_auth:
+        - igvf_auth:
             - read:variants
   /variant/findByRegion:
     get:
@@ -110,7 +145,7 @@ paths:
         '400':
           description: Invalid input region
       security:
-        - petstore_auth:
+        - igvf_auth:
             - read:variants
   /variant/{variantId}:
     get:
@@ -127,6 +162,13 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: fullInfo
+          description: If set to true, the full table of information will be returned; else, return the shorter version for visualization. Default value is false.
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: successful operation
@@ -143,10 +185,21 @@ paths:
           description: Variant not found
       security:
         - api_key: []
-        - petstore_auth:
+        - igvf_auth:
             - read:variants
 components:
   schemas:
+
+    VariantId:
+      type: object
+      properties:
+        format:
+          type: string
+          example: rs1250566
+        source:
+          type: string
+          description: The datasource associated with this id format
+          example: dbSNP
 
     AlleleType:
       type: string
@@ -219,23 +272,13 @@ components:
           type: string
       xml:
         name: '##default'
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Variant'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Variant'
 
   securitySchemes:
-    petstore_auth:
+    igvf_auth:
       type: oauth2
       flows:
         implicit:
-          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          authorizationUrl: https://igvf.org/authorize
           scopes:
             read:variants: read variants
     api_key:
