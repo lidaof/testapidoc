@@ -133,6 +133,13 @@ paths:
           explode: true
           schema:
             type: string
+        - name: assembly
+          in: query
+          description: genome assembly
+          required: true
+          explode: true
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
@@ -228,6 +235,9 @@ components:
         id:
           type: string
           example: rs******
+        assembly:
+          type: string
+          example: hg38
         position:
           type: object
           properties:
